@@ -523,7 +523,7 @@ router.put("/update", function (req, res) {
 
                     }
                 } else {
-                    return res.status(401).json({
+                    return res.status(400).json({
                         msg: "Incorrect password.",
                         success: false,
                     });
@@ -610,7 +610,7 @@ router.put("/updae", function (req, res) {
                                 );
                     }
                 } else {
-                    return res.status(401).json({
+                    return res.status(400).json({
                         msg: "Incorrect password.",
                         success: false,
                     });
