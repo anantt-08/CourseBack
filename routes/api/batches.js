@@ -41,6 +41,25 @@ router.get(
         })
     }
 );
+// router.get(
+//     "/findbyid/:id",
+//     authenticate.verifyUser,
+//     function (req, res) {
+//         Batch.findOneById(req.params.id,function(err,User){
+//             if (err) return  res.status(404).json({
+//                 success: false,
+//                 msg: "Batch Not Found",
+//             })
+//             else{
+//                 return res.status(200).json({
+//                     success: true,
+//                     msg: "Listed",
+//                     userlist: User,
+//                 });
+//             } 
+//         })
+//     }
+// );
 
 router.delete(
     "/deletebatch/:id",

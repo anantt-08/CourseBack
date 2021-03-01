@@ -24,11 +24,14 @@ router.post("/register",authenticate.verifyUser,authenticate.verifyAdmin,(req, r
     description: Joi.string()
          .required(),
     courseid:Joi.string()
-         .required()     
+         .required(),
+    batchname:Joi.string()
+        .required()          
 })
 req.body.password=  (Math.floor(Math.random() * 9000) + 1000).toString();
-    let { name,mobile,birth, email,description,password,courseid,coursename} = req.body;
-    let result=schema.validate({ name: name,mobile:mobile,courseid:courseid,description:description,birth:birth,email:email});
+    let { name,mobile,birth, email,description,password,courseid,coursename,batchname} = req.body;
+    let result=schema.validate({ name: name,mobile:mobile,courseid:courseid,description:description,
+        batchname:batchname,birth:birth,email:email});
 
     if(result.error){
         //console.log(result.error)
@@ -45,60 +48,63 @@ req.body.password=  (Math.floor(Math.random() * 9000) + 1000).toString();
                     "Email is already registred.",
             });
         }
+        else{
+            var transporter = nodemailer.createTransport({
+                service: "gmail",
+                secure: false, // true for 465, false for other ports
+                auth: {
+                    user: "rambaghcolonyy@gmail.com", // generated ethereal user
+                    pass: "Rambagh@123", // generated ethereal password
+                },
+                 tls:{
+            rejectUnauthorized:false
+        }
+            });
+            var mailOptions = {
+                from: "rambaghcolonyy@gmail.com",
+                to: req.body.email,
+                subject: "Successfully Registered",
+                html:
+                    `<h1 style='font-family:verdana;color:red'>You Are Now Registered!</h1>
+                    <p>Hello <b>${name}</b> You can Now register With-</p>
+                    <h2><i>Email: ${email} </i></h2>
+                     <h2><i>Password: ${password}</i> </h2> 
+                    ` 
+                } 
+               
+                transporter.sendMail(mailOptions, function (error, info) {
+                    if (error) {
+                        console.log(error);
+                    } else {
+                        console.log("Email sent: " + info.response);
+                    }
+                });
+        
+            let newUser = new User({
+                name,mobile,birth,description,
+                password,
+                email
+            });
+            newUser.courseid.push({id:courseid,name:coursename})
+            newUser.batchname.push(batchname)
+            // Hash the password
+            bcrypt.genSalt(10, (err, salt) => {
+                bcrypt.hash(newUser.password, salt, (err, hash) => {
+                    if (err) throw err;
+                    newUser.password = hash;
+                    newUser.save().then((user) => {
+                        return res.status(200).json({
+                            success: true,
+                            msg: "Email Send to Registered Employee!",
+                        });
+                    })
+                     .catch((err) => next(err));
+                });
+        
+            });
+        }
     });
     //The data is valid and new we can register the user
-    var transporter = nodemailer.createTransport({
-        service: "gmail",
-        secure: false, // true for 465, false for other ports
-        auth: {
-            user: "rambaghcolonyy@gmail.com", // generated ethereal user
-            pass: "Rambagh@123", // generated ethereal password
-        },
-         tls:{
-    rejectUnauthorized:false
-}
-    });
-    var mailOptions = {
-        from: "rambaghcolonyy@gmail.com",
-        to: req.body.email,
-        subject: "Successfully Registered",
-        html:
-            `<h1 style='font-family:verdana;color:red'>You Are Now Registered!</h1>
-            <p>Hello <b>${name}</b> You can Now register With-</p>
-            <h2><i>Email: ${email} </i></h2>
-             <h2><i>Password: ${password}</i> </h2> 
-            ` 
-        } 
-       
-        transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-                console.log(error);
-            } else {
-                console.log("Email sent: " + info.response);
-            }
-        });
-
-    let newUser = new User({
-        name,mobile,birth,description,
-        password,
-        email
-    });
-    newUser.courseid.push({name:coursename,id:courseid})
-    // Hash the password
-    bcrypt.genSalt(10, (err, salt) => {
-        bcrypt.hash(newUser.password, salt, (err, hash) => {
-            if (err) throw err;
-            newUser.password = hash;
-            newUser.save().then((user) => {
-                return res.status(200).json({
-                    success: true,
-                    msg: "Email Send to Registered Employee!",
-                });
-            })
-             .catch((err) => next(err));
-        });
-
-    });
 });
 router.get(
     "/userlist",
@@ -121,10 +127,14 @@ router.put(
     authenticate.verifyUser,
     authenticate.verifyAdmin,
     function (req, res) {
+        let batchh=req.body.batchname
         User.findByIdAndUpdate(
             req.params.id,
             {
-               courseid:req.body
+               courseid:req.body.courseid,
+                $push: {
+                  batchname: batchh
+      }
             },
             { new: true ,useFindAndModify: false},
             function (err, result) {
@@ -143,7 +153,53 @@ router.put(
         ); 
     } 
 ); 
+router.get("/findnameyeah/:id",authenticate.verifyUser,
+authenticate.verifyAdmin,
+function (req, res) {
+    User.findById(req.params.id,function(err,User){
+        if (err) return  res.status(404).json({
+                            success: false,
+                            msg: "Batch Not Found",
+                        })
+                        else{
+                            return res.status(200).json({
+                                success: true,
+                                msg: "Listed",
+                                userlist: User,
+                            });
+                        } 
+    })
+})
 
+router.put(
+    "/removechangecourseid/:id",
+    authenticate.verifyUser,
+    authenticate.verifyAdmin,
+    function (req, res) {
+        let batchh=req.body.batchname
+        User.findByIdAndUpdate(
+            req.params.id,
+            {
+               courseid:req.body.courseid,
+                $pull: { batchname: batchh }
+            },
+            { new: true ,useFindAndModify: false},
+            function (err, result) {
+                if (err) {
+                    return res.status(400).json({
+                        success: false,
+                        msg: "Something went wrong",
+                    });
+                }
+         return res.status(200).json({
+                        success: true,
+                        msg: "Updated!",
+                        user: result,
+                    }); 
+    }    
+        ); 
+    } 
+); 
 
 router.put(
     "/deleteaccount/:id",

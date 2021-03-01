@@ -1,3 +1,4 @@
+const { string } = require('joi');
 const mongoose=require('mongoose');
 const Schema=mongoose.Schema;
 const BatchSchema = new Schema({
@@ -18,6 +19,14 @@ const BatchSchema = new Schema({
         required:true
     },
     startdate:{
+        type:String,
+        required:true
+    },
+    duration:{
+        type:String,
+        required:true
+    },
+    status:{
         type:String,
         required:true
     }

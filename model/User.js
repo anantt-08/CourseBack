@@ -10,6 +10,10 @@ const UserSchema = new Schema({
          type:[]
      }
      ,
+     batchname:{
+        type:[]
+    }
+     ,
     admin:{
         type:Boolean,
         default:false
