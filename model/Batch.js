@@ -29,6 +29,10 @@ const BatchSchema = new Schema({
     status:{
         type:String,
         required:true
+    },
+    lastdate:{
+        type:String,
+        default:""
     }
 }
 );

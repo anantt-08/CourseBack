@@ -26,12 +26,14 @@ router.post("/register",authenticate.verifyUser,authenticate.verifyAdmin,(req, r
     courseid:Joi.string()
          .required(),
     batchname:Joi.string()
-        .required()          
+        .required(),
+    batchid:Joi.string()             
+    .required() 
 })
 req.body.password=  (Math.floor(Math.random() * 9000) + 1000).toString();
-    let { name,mobile,birth, email,description,password,courseid,coursename,batchname} = req.body;
+    let { name,mobile,birth, email,description,password,courseid,coursename,batchname,batchid} = req.body;
     let result=schema.validate({ name: name,mobile:mobile,courseid:courseid,description:description,
-        batchname:batchname,birth:birth,email:email});
+        batchname:batchname,birth:birth,email:email,batchid:batchid});
 
     if(result.error){
         //console.log(result.error)
@@ -86,7 +88,7 @@ req.body.password=  (Math.floor(Math.random() * 9000) + 1000).toString();
                 email
             });
             newUser.courseid.push({id:courseid,name:coursename})
-            newUser.batchname.push(batchname)
+            newUser.batchname.push({id:batchid,name:batchname})
             // Hash the password
             bcrypt.genSalt(10, (err, salt) => {
                 bcrypt.hash(newUser.password, salt, (err, hash) => {
@@ -128,12 +130,13 @@ router.put(
     authenticate.verifyAdmin,
     function (req, res) {
         let batchh=req.body.batchname
+        let idd=req.body.batchid
         User.findByIdAndUpdate(
             req.params.id,
             {
                courseid:req.body.courseid,
                 $push: {
-                  batchname: batchh
+                  batchname: {id:idd,name:batchh}
       }
             },
             { new: true ,useFindAndModify: false},
@@ -177,11 +180,12 @@ router.put(
     authenticate.verifyAdmin,
     function (req, res) {
         let batchh=req.body.batchname
+        let idd=req.body.batchid
         User.findByIdAndUpdate(
             req.params.id,
             {
                courseid:req.body.courseid,
-                $pull: { batchname: batchh }
+                $pull: { batchname: {id:idd,name:batchh} }
             },
             { new: true ,useFindAndModify: false},
             function (err, result) {

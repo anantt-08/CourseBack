@@ -11,7 +11,7 @@ router.use(bodyParser.json());
 
 
 router.get(
-    "/find",
+    "/finnnnd",
     authenticate.verifyUser,
     function (req, res) {
         Batch.find(
@@ -26,10 +26,25 @@ router.get(
     }
 );
 router.get(
+    "/find",
+    authenticate.verifyUser,
+    function (req, res) {
+        Batch.find(
+            {status: {$ne : "Completed"}}, function (err, User) {
+                if (err) return console.error(err);
+                return res.status(200).json({
+                    success: true,
+                    msg: "Listed",
+                    userlist: User,
+                });
+            }).sort( { "coursename": 1 } );
+    }
+);
+router.get(
     "/find/:id",
     authenticate.verifyUser,
     function (req, res) {
-        Batch.find({courseid:req.params.id})
+        Batch.find({courseid:req.params.id,status: {$ne : "Completed"}})
         .then((result) => {
      return res.status(200).json({
                       success: true,
@@ -41,25 +56,25 @@ router.get(
         })
     }
 );
-// router.get(
-//     "/findbyid/:id",
-//     authenticate.verifyUser,
-//     function (req, res) {
-//         Batch.findOneById(req.params.id,function(err,User){
-//             if (err) return  res.status(404).json({
-//                 success: false,
-//                 msg: "Batch Not Found",
-//             })
-//             else{
-//                 return res.status(200).json({
-//                     success: true,
-//                     msg: "Listed",
-//                     userlist: User,
-//                 });
-//             } 
-//         })
-//     }
-// );
+router.get(
+    "/findbyid/:id",
+    authenticate.verifyUser,
+    function (req, res) {
+        Batch.findById(req.params.id,function(err,User){
+            if (err) return  res.status(404).json({
+                success: false,
+                msg: "Batch Not Found",
+            })
+            else{
+                return res.status(200).json({
+                    success: true,
+                    msg: "Listed",
+                    userlist: User,
+                });
+            } 
+        })
+    }
+);
 
 router.delete(
     "/deletebatch/:id",
@@ -82,6 +97,22 @@ router.delete(
 
     });
 });
+router.put("/editbatchstatus/:id",authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
+    Batch.findByIdAndUpdate(req.params.id, {
+           status:"Completed"
+    }, { new: true })
+    .then((result) => {
+        return res.status(200).json({
+            success: true,
+            msg: "Batch Status Updated",
+            user: result,
+        });
+    }
+    //for error handling of this
+    , (err) => next(err))
+    .catch((err) => next(err));
+})
+
 
 router.put("/editbatch/:id",authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
     Batch.findByIdAndUpdate(req.params.id, {
@@ -89,7 +120,9 @@ router.put("/editbatch/:id",authenticate.verifyUser,authenticate.verifyAdmin,(re
             timing: req.body.timing,
             week:req.body.week,
             startdate:req.body.startdate,
-            courseid:req.body.courseid       
+            courseid:req.body.courseid,
+            duration:req.body.duration,
+            lastdate:req.body.lastdate      
     }, { new: true })
     .then((result) => {
         return res.status(200).json({
@@ -113,10 +146,12 @@ router.post("/batch",authenticate.verifyUser,authenticate.verifyAdmin,(req, res)
              .required(),
         startdate:Joi.string()
              .required(),
-        courseid:Joi.string()          
+        courseid:Joi.string(),
+        duration:Joi.string()
+        .required()          
     })
-        let { coursename,timing,week, startdate,courseid} = req.body;
-        let result=schema.validate({coursename:coursename,courseid:courseid,timing:timing,week:week, startdate:startdate});
+        let { coursename,timing,week, startdate,courseid,duration,status,lastdate} = req.body;
+        let result=schema.validate({coursename:coursename,courseid:courseid,timing:timing,week:week,duration:duration, startdate:startdate});
     
         if(result.error){
            return res.status(400).json({
@@ -124,7 +159,7 @@ router.post("/batch",authenticate.verifyUser,authenticate.verifyAdmin,(req, res)
                 });
         }
     Batch.create({
-        coursename,courseid,timing,week, startdate
+        coursename,courseid,timing,week, startdate,duration,status,lastdate
     })
     .then((user) => {
                 //console.log(user)
