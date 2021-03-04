@@ -97,6 +97,21 @@ router.delete(
 
     });
 });
+router.put("/changestatus/:id",authenticate.verifyUser,(req, res, next) => {
+    Batch.findByIdAndUpdate(req.params.id, {
+           status:req.body.status,lastdate:req.body.lastdate
+    }, { new: true })
+    .then((result) => {
+        return res.status(200).json({
+            success: true,
+            msg: "Batch Status Updated",
+            user: result,
+        });
+    }
+    //for error handling of this
+    , (err) => next(err))
+    .catch((err) => next(err));
+})
 router.put("/editbatchstatus/:id",authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
     Batch.findByIdAndUpdate(req.params.id, {
            status:"Completed"
@@ -122,7 +137,8 @@ router.put("/editbatch/:id",authenticate.verifyUser,authenticate.verifyAdmin,(re
             startdate:req.body.startdate,
             courseid:req.body.courseid,
             duration:req.body.duration,
-            lastdate:req.body.lastdate      
+            lastdate:req.body.lastdate,
+            status:req.body.status      
     }, { new: true })
     .then((result) => {
         return res.status(200).json({
