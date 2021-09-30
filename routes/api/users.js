@@ -322,7 +322,7 @@ router.post("/login", (req, res) => {
                     payload,
                     key,
                     {
-                        expiresIn: 404800,
+                        expiresIn: 3600,
                     },
                     (err, token) => {
                         res.status(200).json({
